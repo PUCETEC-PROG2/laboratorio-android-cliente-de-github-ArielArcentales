@@ -1,7 +1,5 @@
 package ec.edu.uisek.githubclient
 
-package ec.edu.uisek.githubclient
-
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater

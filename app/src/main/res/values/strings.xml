@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Github Client</string>
+    <string name="image_description">Imagen del dueño del repositorio</string>
+    <string name="repo_name">Repositorio:</string>
+    <string name="repo_description">Descripción:</string>
+    <string name="repo_language">Lenguaje:</string>
 </resources>
