@@ -15,14 +15,15 @@ class RepoViewHolder(private val binding: FragmentRepoItemBinding) : RecyclerVie
     //    Por ahora, usaremos datos de ejemplo.
     fun bind(repo: Repo) {
         binding.repoName.text = repo.name
-        binding.repoDescription.text = repo.description ?: "El repositorio no tiene descripción"
-        binding.repoLanguage.text = repo.language ?: "Lenguaje no especificado"
+        binding.repoDescription.text = repo.description ?: "El repositorio no teine descripcion"
+        binding.repoLanguage.text = repo.language ?: "El repositorio no tiene lenguaje"
         Glide.with(binding.root.context)
             .load(repo.owner.avatarUrl)
             .placeholder(R.mipmap.ic_launcher)
             .error(R.mipmap.ic_launcher)
             .circleCrop()
             .into(binding.repoOwnerImage)
+
     }
 }
 
@@ -30,6 +31,7 @@ class RepoViewHolder(private val binding: FragmentRepoItemBinding) : RecyclerVie
 class ReposAdapter : RecyclerView.Adapter<RepoViewHolder>() {
 
     private var repositories : List<Repo> = emptyList()
+
     override fun getItemCount(): Int = repositories.size
 
     // Se llama para crear un nuevo ViewHolder cuando el RecyclerView lo necesita.
@@ -48,8 +50,9 @@ class ReposAdapter : RecyclerView.Adapter<RepoViewHolder>() {
         holder.bind(repositories[position])
     }
 
-    fun updateRepositories(newRepos: List<Repo>) {
+    fun updateRepositories(newRepos: List<Repo>){
         repositories = newRepos
+
         notifyDataSetChanged()
     }
 }
