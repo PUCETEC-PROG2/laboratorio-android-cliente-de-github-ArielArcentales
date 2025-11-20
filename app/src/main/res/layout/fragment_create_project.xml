@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="?android:attr/colorBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Campo Nombre -->
+    <EditText
+        android:id="@+id/et_project_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_project_name"
+        android:inputType="textCapSentences"
+        android:minHeight="48dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Campo Descripción -->
+    <EditText
+        android:id="@+id/et_project_desc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_project_desc"
+        android:inputType="textMultiLine"
+        android:minLines="3"
+        android:gravity="top"
+        android:minHeight="48dp"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Botón Crear -->
+    <Button
+        android:id="@+id/btn_create_project"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_create"/>
+
+</LinearLayout>

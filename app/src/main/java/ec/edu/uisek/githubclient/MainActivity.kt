@@ -2,6 +2,7 @@ package ec.edu.uisek.githubclient
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,8 +21,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
         setupRecyclerView()
-        fetchRepositories()
+        setupFab()
+        
+        // Solo cargar repositorios si no hay un estado guardado (para evitar recargar al rotar)
+        if (savedInstanceState == null) {
+            fetchRepositories()
+        }
+        
+        // Escuchar cambios en la pila de fragments para mostrar/ocultar el FAB
+        supportFragmentManager.addOnBackStackChangedListener {
+            if (supportFragmentManager.backStackEntryCount > 0) {
+                binding.fabAddProject.hide()
+            } else {
+                binding.fabAddProject.show()
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -32,9 +48,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupFab() {
+        binding.fabAddProject.setOnClickListener {
+            val fragment = CreateProjectFragment()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit()
+        }
+    }
+
     private fun fetchRepositories() {
         val apiService = RetrofitClient.gitHubApiService
-        val call = apiService.getRepos() // Llamada corregida sin argumentos
+        val call = apiService.getRepos()
 
         call.enqueue(object : Callback<List<Repo>> {
             override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {

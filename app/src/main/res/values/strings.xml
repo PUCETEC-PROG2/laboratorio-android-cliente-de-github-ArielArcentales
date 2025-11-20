@@ -5,4 +5,12 @@
     <string name="repo_lang">Lenguaje</string>
     <string name="test_text">Texto de prueba</string>
     <string name="image_description">Imagen del dueño del repositorio</string>
+
+    <string name="fab_add_project">Crear Proyecto</string>
+    <string name="title_new_project">Nuevo Proyecto</string>
+    <string name="hint_project_name">Nombre del proyecto</string>
+    <string name="hint_project_desc">Descripción del proyecto</string>
+    <string name="btn_create">Crear Proyecto</string>
+    <string name="msg_project_created">Proyecto creado (simulación)</string>
+    <string name="logo_description">Logo del proyecto</string>
 </resources>
