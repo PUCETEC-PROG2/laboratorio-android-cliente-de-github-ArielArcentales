@@ -23,16 +23,19 @@ class CreateProjectFragment : Fragment() {
     private var isEditMode = false
     private var initialName: String? = null
     private var initialDesc: String? = null
+    private var repoOwner: String? = null
 
     companion object {
         private const val ARG_NAME = "arg_name"
         private const val ARG_DESC = "arg_desc"
+        private const val ARG_OWNER = "arg_owner"
 
-        fun newInstance(name: String, description: String): CreateProjectFragment {
+        fun newInstance(name: String, description: String, owner: String): CreateProjectFragment {
             val fragment = CreateProjectFragment()
             val args = Bundle()
             args.putString(ARG_NAME, name)
             args.putString(ARG_DESC, description)
+            args.putString(ARG_OWNER, owner)
             fragment.arguments = args
             return fragment
         }
@@ -43,6 +46,7 @@ class CreateProjectFragment : Fragment() {
         arguments?.let {
             initialName = it.getString(ARG_NAME)
             initialDesc = it.getString(ARG_DESC)
+            repoOwner = it.getString(ARG_OWNER)
             isEditMode = true
         }
     }
@@ -73,11 +77,10 @@ class CreateProjectFragment : Fragment() {
 
             if (projectName.isNotBlank()) {
                 if (isEditMode) {
-                    // Simulación para editar
-                    Toast.makeText(context, "Cambios guardados (Simulación)", Toast.LENGTH_SHORT).show()
-                    parentFragmentManager.popBackStack()
+                    // Llamada real a la API para actualizar (PATCH)
+                    updateRepository(repoOwner ?: "", projectName, projectDesc)
                 } else {
-                    // Llamada real a la API para crear
+                    // Llamada real a la API para crear (POST)
                     createRepository(projectName, projectDesc)
                 }
             } else {
@@ -87,7 +90,7 @@ class CreateProjectFragment : Fragment() {
     }
 
     private fun createRepository(name: String, description: String) {
-        binding.btnCreateProject.isEnabled = false // Evitar doble clic
+        binding.btnCreateProject.isEnabled = false
         val request = CreateRepoRequest(name, description)
         val call = RetrofitClient.gitHubApiService.createRepo(request)
 
@@ -105,6 +108,39 @@ class CreateProjectFragment : Fragment() {
                     }
                     Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
                     Log.e("CreateProject", "Error creando repo: ${response.errorBody()?.string()}")
+                }
+            }
+
+            override fun onFailure(call: Call<Repo>, t: Throwable) {
+                binding.btnCreateProject.isEnabled = true
+                Toast.makeText(context, "Error de conexión: ${t.message}", Toast.LENGTH_LONG).show()
+                Log.e("CreateProject", "Fallo en red", t)
+            }
+        })
+    }
+
+    private fun updateRepository(owner: String, name: String, description: String) {
+        binding.btnCreateProject.isEnabled = false
+        val request = CreateRepoRequest(name, description)
+        // Nota: GitHub permite cambiar el nombre también, pero como bloqueamos el campo name, 
+        // en la práctica solo se actualizará la descripción.
+        val call = RetrofitClient.gitHubApiService.updateRepo(owner, name, request)
+
+        call.enqueue(object : Callback<Repo> {
+            override fun onResponse(call: Call<Repo>, response: Response<Repo>) {
+                binding.btnCreateProject.isEnabled = true
+                if (response.isSuccessful) {
+                    Toast.makeText(context, "Proyecto actualizado en GitHub exitosamente", Toast.LENGTH_SHORT).show()
+                    parentFragmentManager.popBackStack()
+                } else {
+                    val errorMsg = when (response.code()) {
+                        401 -> "Error 401: Verifica tu Token"
+                        403 -> "Error 403: No tienes permiso"
+                        404 -> "Error 404: No encontrado"
+                        else -> "Error: ${response.code()}"
+                    }
+                    Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                    Log.e("CreateProject", "Error editando repo: ${response.errorBody()?.string()}")
                 }
             }
 

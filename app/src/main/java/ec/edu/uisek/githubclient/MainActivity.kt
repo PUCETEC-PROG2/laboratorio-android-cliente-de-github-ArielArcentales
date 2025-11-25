@@ -1,10 +1,11 @@
 package ec.edu.uisek.githubclient
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import ec.edu.uisek.githubclient.databinding.ActivityMainBinding
 import ec.edu.uisek.githubclient.models.Repo
@@ -21,54 +22,44 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
+
         setupRecyclerView()
         setupFab()
         fetchRepositories()
-        
+
         supportFragmentManager.addOnBackStackChangedListener {
-            if (supportFragmentManager.backStackEntryCount > 0) {
-                binding.fabAddProject.hide()
-                binding.fragmentContainer.visibility = View.VISIBLE
-                binding.repoRecyclerView.visibility = View.GONE
-            } else {
-                binding.fabAddProject.show()
-                binding.fragmentContainer.visibility = View.GONE
-                binding.repoRecyclerView.visibility = View.VISIBLE
-            }
+            val isMainScreen = supportFragmentManager.backStackEntryCount == 0
+            updateVisibility(isMainScreen)
+            if (isMainScreen) fetchRepositories()
         }
+    }
+
+    private fun updateVisibility(isMainScreen: Boolean) {
+        binding.fabAddProject.visibility = if (isMainScreen) View.VISIBLE else View.GONE
+        binding.repoRecyclerView.visibility = if (isMainScreen) View.VISIBLE else View.GONE
+        binding.fragmentContainer.visibility = if (isMainScreen) View.GONE else View.VISIBLE
     }
 
     private fun setupRecyclerView() {
         reposAdapter = ReposAdapter(
-            onDelete = { repo ->
-                reposAdapter.removeItem(repo)
-                Toast.makeText(this, "Repositorio eliminado (Solo visualmente)", Toast.LENGTH_SHORT).show()
-            },
-            onEdit = { repo ->
-                openEditFragment(repo)
-            }
+            onDelete = { confirmDeleteRepo(it) },
+            onEdit = { openEditFragment(it) }
         )
-        
-        binding.repoRecyclerView.apply {
-            adapter = reposAdapter
-            layoutManager = LinearLayoutManager(this@MainActivity)
-        }
+        binding.repoRecyclerView.adapter = reposAdapter
+        binding.repoRecyclerView.layoutManager = LinearLayoutManager(this)
     }
 
     private fun setupFab() {
         binding.fabAddProject.setOnClickListener {
-            val fragment = CreateProjectFragment()
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit()
+            openFragment(CreateProjectFragment())
         }
     }
 
     private fun openEditFragment(repo: Repo) {
-        val fragment = CreateProjectFragment.newInstance(repo.name, repo.description ?: "")
-        
+        openFragment(CreateProjectFragment.newInstance(repo.name, repo.description ?: "", repo.owner.login))
+    }
+
+    private fun openFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .addToBackStack(null)
@@ -76,35 +67,55 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchRepositories() {
-        val apiService = RetrofitClient.gitHubApiService
-        val call = apiService.getRepos()
-
-        call.enqueue(object : Callback<List<Repo>> {
+        RetrofitClient.gitHubApiService.getRepos().enqueue(object : Callback<List<Repo>> {
             override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
                 if (response.isSuccessful) {
-                    val repos = response.body()
-                    if (repos != null && repos.isNotEmpty()) {
-                        reposAdapter.updateRepositories(repos)
-                    } else {
-                        showMessage("No se encontraron repositorios")
-                    }
+                    response.body()?.let { reposAdapter.updateRepositories(it) }
                 } else {
-                    val errorMsg = when (response.code()) {
-                        401 -> "Error 401: Verifica tu Token de GitHub"
-                        403 -> "Error 403: Acceso denegado"
-                        404 -> "Error 404: No encontrado"
-                        else -> "Error: ${response.code()}"
-                    }
-                    Log.e("MainActivity", errorMsg)
-                    showMessage(errorMsg)
+                    showError(response.code())
                 }
             }
 
             override fun onFailure(call: Call<List<Repo>>, t: Throwable) {
-                Log.e("MainActivity", "Error de conexión", t)
                 showMessage("Error de conexión: ${t.message}")
             }
         })
+    }
+
+    private fun confirmDeleteRepo(repo: Repo) {
+        AlertDialog.Builder(this)
+            .setTitle("Eliminar Repositorio")
+            .setMessage("¿Estás seguro de eliminar ${repo.name}?")
+            .setPositiveButton("Eliminar") { _, _ -> deleteRepository(repo) }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun deleteRepository(repo: Repo) {
+        RetrofitClient.gitHubApiService.deleteRepo(repo.owner.login, repo.name).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    showMessage("Repositorio eliminado")
+                    reposAdapter.removeItem(repo)
+                } else {
+                    showError(response.code())
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                showMessage("Error al eliminar")
+            }
+        })
+    }
+
+    private fun showError(code: Int) {
+        val msg = when (code) {
+            401 -> "Error 401: Token inválido"
+            403 -> "Error 403: Sin permisos"
+            404 -> "Error 404: No encontrado"
+            else -> "Error: $code"
+        }
+        showMessage(msg)
     }
 
     private fun showMessage(msg: String) {
