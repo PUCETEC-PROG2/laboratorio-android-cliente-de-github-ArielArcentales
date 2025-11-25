@@ -24,24 +24,32 @@ class MainActivity : AppCompatActivity() {
         
         setupRecyclerView()
         setupFab()
+        fetchRepositories()
         
-        // Solo cargar repositorios si no hay un estado guardado (para evitar recargar al rotar)
-        if (savedInstanceState == null) {
-            fetchRepositories()
-        }
-        
-        // Escuchar cambios en la pila de fragments para mostrar/ocultar el FAB
         supportFragmentManager.addOnBackStackChangedListener {
             if (supportFragmentManager.backStackEntryCount > 0) {
                 binding.fabAddProject.hide()
+                binding.fragmentContainer.visibility = View.VISIBLE
+                binding.repoRecyclerView.visibility = View.GONE
             } else {
                 binding.fabAddProject.show()
+                binding.fragmentContainer.visibility = View.GONE
+                binding.repoRecyclerView.visibility = View.VISIBLE
             }
         }
     }
 
     private fun setupRecyclerView() {
-        reposAdapter = ReposAdapter()
+        reposAdapter = ReposAdapter(
+            onDelete = { repo ->
+                reposAdapter.removeItem(repo)
+                Toast.makeText(this, "Repositorio eliminado (Solo visualmente)", Toast.LENGTH_SHORT).show()
+            },
+            onEdit = { repo ->
+                openEditFragment(repo)
+            }
+        )
+        
         binding.repoRecyclerView.apply {
             adapter = reposAdapter
             layoutManager = LinearLayoutManager(this@MainActivity)
@@ -56,6 +64,15 @@ class MainActivity : AppCompatActivity() {
                 .addToBackStack(null)
                 .commit()
         }
+    }
+
+    private fun openEditFragment(repo: Repo) {
+        val fragment = CreateProjectFragment.newInstance(repo.name, repo.description ?: "")
+        
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun fetchRepositories() {
@@ -73,9 +90,9 @@ class MainActivity : AppCompatActivity() {
                     }
                 } else {
                     val errorMsg = when (response.code()) {
-                        401 -> "Error de autenticación. Revisa tu token."
-                        403 -> "Prohibido"
-                        404 -> "No encontrado"
+                        401 -> "Error 401: Verifica tu Token de GitHub"
+                        403 -> "Error 403: Acceso denegado"
+                        404 -> "Error 404: No encontrado"
                         else -> "Error: ${response.code()}"
                     }
                     Log.e("MainActivity", errorMsg)

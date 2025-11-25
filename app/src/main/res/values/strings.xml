@@ -5,7 +5,6 @@
     <string name="repo_lang">Lenguaje</string>
     <string name="test_text">Texto de prueba</string>
     <string name="image_description">Imagen del dueño del repositorio</string>
-
     <string name="fab_add_project">Crear Proyecto</string>
     <string name="title_new_project">Nuevo Proyecto</string>
     <string name="hint_project_name">Nombre del proyecto</string>
@@ -13,4 +12,9 @@
     <string name="btn_create">Crear Proyecto</string>
     <string name="msg_project_created">Proyecto creado (simulación)</string>
     <string name="logo_description">Logo del proyecto</string>
+    <string name="action_edit">Editar repositorio</string>
+    <string name="action_delete">Eliminar repositorio</string>
+    <string name="msg_deleted">Repositorio eliminado (localmente)</string>
+    <string name="btn_save">Guardar Cambios</string>
+    <string name="msg_saved">Cambios guardados (simulación)</string>
 </resources>
